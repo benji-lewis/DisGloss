@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS Glossary (EntryId INTEGER PRIMARY KEY, ServerId GUID, Term TEXT, Meaning TEXT);
