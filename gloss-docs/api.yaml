@@ -19,24 +19,15 @@ paths:
       summary: "Check whether a channel should be cached"
       description: "This endpoint will return either 200 or 404 dependent on whether the channel has been enabled as a glossary channel."
       parameters:
-        - in: "path"
-          name: "guildId"
-          schema:
-            type: "string"
-          required: true
-          allowEmptyValue: false
-        - in: "path"
-          name: "channelId"
-          schema:
-            type: "string"
-          required: true
-          allowEmptyValue: false
+        - $ref: '#/components/parameters/guildId'
+        - $ref: '#/components/parameters/channelId'
       responses:
-        200:
+        "200":
           description: "Indicates that the channel should be cached"
-        404:
+        "404":
           description: "Indicates the channel should not be cached"
-        default: "#/components/responses/GenericError"
+        default:
+          $ref: '#/components/responses/GenericError'
     post:
       operationId: "enableConfig"
       tags:
@@ -44,20 +35,10 @@ paths:
       summary: "Enables glossary functionality on a channel"
       description: "When this endpoint is called, the channel is enabled for DisGloss monitoring."
       parameters:
-        - in: "path"
-          name: "guildId"
-          schema:
-            type: "string"
-          required: true
-          allowEmptyValue: false
-        - in: "path"
-          name: "channelId"
-          schema:
-            type: "string"
-          required: true
-          allowEmptyValue: false
+        - $ref: '#/components/parameters/guildId'
+        - $ref: '#/components/parameters/channelId'
       responses:
-        202:
+        "202":
           description: "Caching has been enabled on the channel"
         default:
           description: "There has been an issue enabling caching on the channel"
@@ -68,43 +49,56 @@ paths:
       summary: "Disables glossary functionality on a channel"
       description: "When this endpoint is called, the channel is disabled for DisGloss monitoring."
       parameters:
-        - in: "path"
-          name: "guildId"
-          schema:
-            type: "string"
-          required: true
-          allowEmptyValue: false
-        - in: "path"
-          name: "channelId"
-          schema:
-            type: "string"
-          required: true
-          allowEmptyValue: false
+        - $ref: '#/components/parameters/guildId'
+        - $ref: '#/components/parameters/channelId'
       responses:
-        202:
+        "202":
           description: "Caching has been disabled on the channel"
         default:
-          description: "There has been an issue enabling caching on the channel"
+          description: "There has been an issue disabling caching on the channel"
   /definition:
     get:
       operationId: "getDefinition"
+      tags:
+        - "Definition"
+      summary: "Fetch all instances of a term"
       description: "Fetches all instances of the term from the server glossary."
       parameters:
-        - in: "query"
-          name: "term"
-          schema:
-            type: "string"
-          required: true
-          allowEmptyValue: false
-        - in: "query"
-          name: "definition"
-          schema:
-            type: "string"
-          required: true
-          allowEmptyValue: false
+        - $ref: '#/components/parameters/term'
+        - $ref: '#/components/parameters/definition'
       responses:
-        200:
+        "200":
           description: "Definition(s) have been found"
+        "404":
+          description: "No definitions found for the term"
+        default:
+          $ref: '#/components/responses/GenericError'
+    post:
+      operationId: "addDefinition"
+      tags:
+        - "Definition"
+      summary: "Add a new term definition"
+      description: "This endpoint allows adding a new term and its definition to the glossary."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                term:
+                  type: string
+                definition:
+                  type: string
+              required:
+                - term
+                - definition
+      responses:
+        "201":
+          description: "Term and definition have been added"
+        "400":
+          description: "Invalid term or definition format"
+        default:
+          $ref: '#/components/responses/GenericError'
   /:
     post:
       operationId: "queueMessage"
@@ -112,13 +106,68 @@ paths:
         - "Queue"
       summary: "Adds a message to the processing queue"
       description: "Messages can be formatted here in Discord format to prepare for batch processing."
-      responses:
-        default:
-          description: "TBC"
-      servers:
-        - url: "https://gloss-queue.xfour.workers.dev/"
+      servers: 
+        - url: "https://gloss-queue.xfour.workers.dev"
           description: "The endpoint used for queuing messages."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                channelId:
+                  type: string
+              required:
+                - message
+                - channelId
+      responses:
+        "202":
+          description: "Message has been added to the queue"
+        "400":
+          description: "Invalid message format"
+        default:
+          $ref: '#/components/responses/GenericError'
 components:
+  parameters:
+    guildId:
+      in: path
+      name: guildId
+      schema:
+        type: string
+      required: true
+      description: "The ID of the Discord guild"
+    channelId:
+      in: path
+      name: channelId
+      schema:
+        type: string
+      required: true
+      description: "The ID of the Discord channel"
+    term:
+      in: query
+      name: term
+      schema:
+        type: string
+      required: true
+      description: "The glossary term"
+    definition:
+      in: query
+      name: definition
+      schema:
+        type: string
+      required: true
+      description: "The definition of the term"
   responses:
     GenericError:
       description: "An unexpected error occurred"
+    ValidationError:
+      description: "There was a validation error in the request"
+#       content:
+#         application/json:
+#           schema:
+#             type: object
+#             properties:
+#               error:
+#                 type: string
