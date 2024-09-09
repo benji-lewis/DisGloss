@@ -1,7 +1,17 @@
 version: "3"
 services:
-  app:
+  redis: 
+    image: "redis:alpine"
+    container_name: "gloss-redis"
+    ports:
+      - "6379:6379"
+  bot:
     build: .
     command: node build/main.js
+    depends_on:
+      - redis
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    # scale: 3

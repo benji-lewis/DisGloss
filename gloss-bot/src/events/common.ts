@@ -1,6 +1,7 @@
 import { ApplicationCommandType, MessageContextMenuCommandInteraction, UserContextMenuCommandInteraction } from "discord.js";
 import type { ArgsOf, Client } from "discordx";
-import { ContextMenu, Discord, On } from "discordx";
+import { ContextMenu, Discord, Guard, On } from "discordx";
+import { AllowedChannel, NotBot } from "../guards";
 
 @Discord()
 class UserInteraction {
@@ -17,11 +18,10 @@ class UserInteraction {
 @Discord()
 class DictionaryMonitor {
   @On({ event: "messageCreate" })
+  @Guard(NotBot, AllowedChannel)
   onMessage(
     [message]: ArgsOf<"messageCreate">,
     client: Client,
     guardPayload: any,
-  ) {
-    console.log("Message created");
-  }
+  ) { fetch(`${process.env.QUEUE_PRODUCER}/message`, { method: "POST", body: JSON.stringify(message) }); }
 }
